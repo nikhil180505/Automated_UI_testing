@@ -11,7 +11,8 @@ const PNG = require('pngjs').PNG;
   await page.screenshot({ path: 'actual.png', fullPage: true });
   await browser.close();
 
-  const expected = PNG.sync.read(fs.readFileSync('expected.png'));
+  const expected = PNG.sync.read(fs.readFileSync('expected design.png'));
+
   const actual = PNG.sync.read(fs.readFileSync('actual.png'));
   const { width, height } = expected;
 

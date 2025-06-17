@@ -1,0 +1,31 @@
+{
+  "name": "automated_ui_testing",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+     "test-ui": "node compare-ui.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nikhil180505/Automated_UI_testing.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nikhil180505/Automated_UI_testing/issues"
+  },
+  "homepage": "https://github.com/nikhil180505/Automated_UI_testing#readme",
+  "description": "",
+  "devDependencies": {
+    "@percy/cli": "^1.31.0",
+    "@percy/playwright": "^1.0.8",
+    "@playwright/test": "^1.53.0"
+  },
+  "dependencies": {
+    "pixelmatch": "^7.1.0",
+    "playwright": "^1.53.0",
+    "pngjs": "^7.0.0"
+  }
+}

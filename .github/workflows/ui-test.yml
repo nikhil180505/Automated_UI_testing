@@ -1,0 +1,49 @@
+name: UI Test Automation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm install
+          npx playwright install --with-deps
+
+      - name: 🚀 Start local server
+        run: |
+          python3 -m http.server 8000 &
+          sleep 5
+
+      - name: 🧪 Run UI Comparison Test
+        run: npm run test-ui
+
+      - name: 📤 Send Result to Zapier
+        if: always()
+        run: |
+          result="pass"
+          if [ "${{ job.status }}" != "success" ]; then
+            result="fail"
+          fi
+
+          curl -X POST https://hooks.zapier.com/hooks/catch/23392502/uo48816/ \
+            -H "Content-Type: application/json" \
+            -d '{
+                  "status": "'$result'",
+                  "pixels": "'$(cat pixel-diff.txt)'"
+                }'

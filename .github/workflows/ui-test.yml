@@ -1,7 +1,6 @@
 name: UI Test Automation
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -23,6 +22,7 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           npm install
+          chmod +x ./node_modules/.bin/playwright
           npx playwright install --with-deps
 
       - name: 🚀 Start local server

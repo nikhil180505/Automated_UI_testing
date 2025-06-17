@@ -1,8 +1,10 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
-const pixelmatch = require('pixelmatch/default');
-
 const PNG = require('pngjs').PNG;
+const pixelmatch = require('pixelmatch');
+
+// Handle pixelmatch export differences
+const actualPixelMatch = pixelmatch.default || pixelmatch;
 
 (async () => {
   const browser = await chromium.launch();
@@ -12,14 +14,13 @@ const PNG = require('pngjs').PNG;
   await page.screenshot({ path: 'actual.png', fullPage: true });
   await browser.close();
 
-  const expected = PNG.sync.read(fs.readFileSync('expected design.png'));
-
+  const expected = PNG.sync.read(fs.readFileSync('expected.png'));
   const actual = PNG.sync.read(fs.readFileSync('actual.png'));
   const { width, height } = expected;
 
   const diff = new PNG({ width, height });
 
-  const numDiffPixels = pixelmatch(
+  const numDiffPixels = actualPixelMatch(
     expected.data,
     actual.data,
     diff.data,

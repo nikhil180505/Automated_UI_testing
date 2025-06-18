@@ -21,55 +21,56 @@ function parseOCRResults(ocrData) {
 }
 
 async function getPosition(page, text, expectedX, expectedY) {
-  try {
-    const locator = page.getByText(text, { exact: true });
+  const locator = page.getByText(text, { exact: true });
 
-    // Wait *with no error on failure* (short timeout)
-    const isVisible = await locator.isVisible({ timeout: 3000 });
-
-    if (!isVisible) {
-      return {
-        text,
-        status: 'not found',
-        expected: { x: expectedX, y: expectedY },
-        actual: null,
-        delta: null
-      };
-    }
-
-    const box = await locator.boundingBox();
-
-    if (!box) {
-      return {
-        text,
-        status: 'no bounding box',
-        expected: { x: expectedX, y: expectedY },
-        actual: null,
-        delta: null
-      };
-    }
-
-    const deltaX = Math.round(box.x - expectedX);
-    const deltaY = Math.round(box.y - expectedY);
-
+  // ✅ Check if the element exists at all
+  const count = await locator.count();
+  if (count === 0) {
     return {
       text,
-      status: 'found',
-      expected: { x: expectedX, y: expectedY },
-      actual: { x: Math.round(box.x), y: Math.round(box.y) },
-      delta: { x: deltaX, y: deltaY }
-    };
-  } catch (err) {
-    return {
-      text,
-      status: 'error',
-      error: err.message,
+      status: 'not found',
       expected: { x: expectedX, y: expectedY },
       actual: null,
       delta: null
     };
   }
+
+  // ✅ Check visibility — skip if hidden
+  const isVisible = await locator.first().isVisible();
+  if (!isVisible) {
+    return {
+      text,
+      status: 'not visible',
+      expected: { x: expectedX, y: expectedY },
+      actual: null,
+      delta: null
+    };
+  }
+
+  // ✅ Try to get bounding box (no wait)
+  const box = await locator.first().boundingBox();
+  if (!box) {
+    return {
+      text,
+      status: 'no bounding box',
+      expected: { x: expectedX, y: expectedY },
+      actual: null,
+      delta: null
+    };
+  }
+
+  const deltaX = Math.round(box.x - expectedX);
+  const deltaY = Math.round(box.y - expectedY);
+
+  return {
+    text,
+    status: 'found',
+    expected: { x: expectedX, y: expectedY },
+    actual: { x: Math.round(box.x), y: Math.round(box.y) },
+    delta: { x: deltaX, y: deltaY }
+  };
 }
+
 
 (async () => {
   // 🧠 Run OCR on the expected image

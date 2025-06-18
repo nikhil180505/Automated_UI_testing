@@ -22,11 +22,9 @@ function parseOCRResults(ocrData) {
   return elements;
 }
 
-
 async function getPosition(page, text, expectedX, expectedY) {
   try {
     const locator = page.getByText(text, { exact: true });
-
     const count = await locator.count();
     if (count === 0) {
       return {
@@ -114,9 +112,26 @@ async function getPosition(page, text, expectedX, expectedY) {
 
   const issues = results
     .filter((r) => r.status !== 'found')
-    .map((r) => `❌ '${r.text}' → ${r.status}`);
+    .map((r) => ({
+      text: r.text,
+      status: r.status,
+      expected: r.expected,
+      actual: r.actual,
+      delta: r.delta || null,
+      error: r.error || null
+    }));
 
-  // Save final JSON
+  // Log summary
+  if (issues.length === 0) {
+    console.log('✅ No layout issues detected.');
+  } else {
+    console.log(`❌ ${issues.length} layout issue(s) found:`);
+    issues.forEach(i => {
+      console.log(`- '${i.text}' → ${i.status}`);
+    });
+  }
+
+  // Save structured result
   fs.writeFileSync(
     'ui-issues.json',
     JSON.stringify(

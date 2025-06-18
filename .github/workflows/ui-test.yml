@@ -43,13 +43,18 @@ jobs:
             result="fail"
           fi
 
+          # Read pixel difference
           pixels=$(cat pixel-diff.txt 2>/dev/null || echo "0")
-          locators=$(cat ui-issues.json 2>/dev/null | jq -c . || echo "[]")
+
+          # Read JSON results from both tests
+          pixel_issues=$(cat pixel-results.json 2>/dev/null | jq -c . || echo "{}")
+          position_issues=$(cat position-results.json 2>/dev/null | jq -c . || echo "[]")
 
           curl -X POST https://hooks.zapier.com/hooks/catch/23392502/uo48816/ \
             -H "Content-Type: application/json" \
             -d '{
                   "status": "'$result'",
-                  "pixels": "'$pixels'",
-                  "locator_issues": '$locators'
+                  "pixel_diff": "'$pixels'",
+                  "pixel_issues": '$pixel_issues',
+                  "position_issues": '$position_issues'
                 }'

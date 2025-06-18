@@ -6,17 +6,28 @@ const pixelmatch = require('pixelmatch');
 // Handle pixelmatch export differences
 const actualPixelMatch = pixelmatch.default || pixelmatch;
 
+// 🔍 Read expected image dimensions *before* launching browser
+const expected = PNG.sync.read(fs.readFileSync('expected design.png'));
+const { width, height } = expected;
+
 (async () => {
   const browser = await chromium.launch();
-  const page = await browser.newPage();
+  
+  // ✅ Set viewport size to match expected image
+  const context = await browser.newContext({
+    viewport: { width, height }
+  });
+
+  const page = await context.newPage();
 
   await page.goto('http://localhost:8000');
-  await page.screenshot({ path: 'actual.png', fullPage: true });
+
+  // ⚠️ Make sure to remove `fullPage: true` to avoid unexpected height differences
+  await page.screenshot({ path: 'actual.png' });
+
   await browser.close();
 
-  const expected = PNG.sync.read(fs.readFileSync('expected design.png'));
   const actual = PNG.sync.read(fs.readFileSync('actual.png'));
-  const { width, height } = expected;
 
   const diff = new PNG({ width, height });
 

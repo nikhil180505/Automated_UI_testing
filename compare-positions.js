@@ -89,6 +89,8 @@ async function getPosition(page, text, expectedX, expectedY) {
 
   const elementData = parseOCRResults(ocrData);
   console.log(`🧾 Found ${elementData.length} elements in expected image`);
+  console.log(elementData.map(e => e.text));
+
 
   const browser = await chromium.launch();
   const page = await browser.newPage();

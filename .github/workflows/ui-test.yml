@@ -33,6 +33,19 @@ jobs:
       - name: 🧪 Run UI Comparison Test
         run: npm run test-ui
 
+      - name: 🪵 Check pixel-diff.txt exists and print content
+        if: always()
+        run: |
+          echo "🗂️ Listing files in working directory:"
+          ls -la
+          
+          echo "📄 Contents of pixel-diff.txt:"
+          if [ -f pixel-diff.txt ]; then
+            cat pixel-diff.txt
+          else
+            echo "⚠️ pixel-diff.txt not found!"
+          fi
+
       - name: 📤 Send Result to Zapier
         if: always()
         run: |
@@ -45,5 +58,5 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
                   "status": "'$result'",
-                  "pixels": "'$(cat pixel-diff.txt)'"
+                  "pixels": "'$(cat pixel-diff.txt 2>/dev/null || echo "file_not_found")'"
                 }'

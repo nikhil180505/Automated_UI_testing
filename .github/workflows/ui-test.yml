@@ -22,7 +22,6 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           npm install
-          chmod +x ./node_modules/.bin/playwright
           npx playwright install --with-deps
 
       - name: 🚀 Start local server

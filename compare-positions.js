@@ -6,9 +6,11 @@ const expectedImagePath = 'expected design.png';
 
 function parseOCRResults(ocrData) {
   const elements = [];
-  ocrData.data.words.forEach((word) => {
+  const words = ocrData?.data?.words || [];
+
+  words.forEach((word) => {
     const { text, bbox } = word;
-    if (text.trim().length > 0) {
+    if (text?.trim()?.length > 0) {
       elements.push({
         text: text.trim(),
         expectedX: bbox.x0,
@@ -16,8 +18,10 @@ function parseOCRResults(ocrData) {
       });
     }
   });
+
   return elements;
 }
+
 
 async function getPosition(page, text, expectedX, expectedY) {
   try {

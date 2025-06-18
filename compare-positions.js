@@ -23,25 +23,51 @@ function parseOCRResults(ocrData) {
 async function getPosition(page, text, expectedX, expectedY) {
   try {
     const locator = page.getByText(text, { exact: true });
-    await locator.waitFor({ timeout: 3000 });
+
+    // Wait *with no error on failure* (short timeout)
+    const isVisible = await locator.isVisible({ timeout: 3000 });
+
+    if (!isVisible) {
+      return {
+        text,
+        status: 'not found',
+        expected: { x: expectedX, y: expectedY },
+        actual: null,
+        delta: null
+      };
+    }
 
     const box = await locator.boundingBox();
 
-    if (box) {
-      const deltaX = Math.abs(box.x - expectedX);
-      const deltaY = Math.abs(box.y - expectedY);
-
+    if (!box) {
       return {
-        status: 'found',
+        text,
+        status: 'no bounding box',
         expected: { x: expectedX, y: expectedY },
-        actual: { x: box.x, y: box.y },
-        delta: { x: deltaX, y: deltaY }
+        actual: null,
+        delta: null
       };
-    } else {
-      return { status: 'no bounding box' };
     }
+
+    const deltaX = Math.round(box.x - expectedX);
+    const deltaY = Math.round(box.y - expectedY);
+
+    return {
+      text,
+      status: 'found',
+      expected: { x: expectedX, y: expectedY },
+      actual: { x: Math.round(box.x), y: Math.round(box.y) },
+      delta: { x: deltaX, y: deltaY }
+    };
   } catch (err) {
-    return { status: 'not found' };
+    return {
+      text,
+      status: 'error',
+      error: err.message,
+      expected: { x: expectedX, y: expectedY },
+      actual: null,
+      delta: null
+    };
   }
 }
 

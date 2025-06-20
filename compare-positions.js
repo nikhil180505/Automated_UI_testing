@@ -1,8 +1,8 @@
 const fs = require('fs');
 const { chromium } = require('playwright');
 const Tesseract = require('tesseract.js');
+const expectedImagePath = 'expected design cleaned.png';
 
-const expectedImagePath = 'expected design.png';
 
 function parseOCRResults(ocrData) {
   const elements = [];
@@ -82,9 +82,11 @@ async function getPosition(page, text, expectedX, expectedY) {
 
 (async () => {
   console.log('🧠 Running OCR on expected design image...');
-  const ocrData = await Tesseract.recognize(expectedImagePath, 'eng', {
-    logger: (m) => process.stdout.write('.')
-  });
+ const ocrData = await Tesseract.recognize(expectedImagePath, 'eng', {
+  logger: (m) => process.stdout.write('.'),
+  tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ',
+});
+
   console.log('\n✅ OCR complete');
 
   const elementData = parseOCRResults(ocrData);
@@ -94,7 +96,7 @@ async function getPosition(page, text, expectedX, expectedY) {
 
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  await page.goto('http://localhost:8000');
+  await page.goto('http://127.0.0.1:5500/index.html');
 
   const results = [];
 
@@ -102,10 +104,11 @@ async function getPosition(page, text, expectedX, expectedY) {
     const result = await getPosition(page, text, expectedX, expectedY);
 
     if (result.status === 'found') {
-      console.log(`✅ '${text}' is off by X: ${result.delta.x}px, Y: ${result.delta.y}px`);
-    } else {
-      console.warn(`❌ '${text}' → ${result.status}`);
-    }
+  console.log(`✅ '${text}' is off by X: ${result.delta.x}px, Y: ${result.delta.y}px`);
+} else {
+  console.warn(`❌ '${text}' → ${result.status}`);
+}
+
 
     results.push(result);
   }

@@ -1,36 +1,62 @@
-const { chromium } = require('playwright');
 const fs = require('fs');
-const PNG = require('pngjs').PNG;
-const pixelmatch = require('pixelmatch');
+const { PNG } = require('pngjs');
+const { ssim } = require('ssim.js');
 
-const expected = PNG.sync.read(fs.readFileSync('expected design.png'));
-const { width, height } = expected;
+// Load PNG and convert to ImageData-like format
+function loadImage(path) {
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(path)
+      .pipe(new PNG())
+      .on('parsed', function () {
+        resolve({
+          data: new Uint8ClampedArray(this.data),
+          width: this.width,
+          height: this.height
+        });
+      })
+      .on('error', reject);
+  });
+}
 
 (async () => {
-  const browser = await chromium.launch();
-  const context = await browser.newContext({ viewport: { width, height } });
-  const page = await context.newPage();
+  try {
+    console.log('🔍 Loading screenshots...');
+    const actual = await loadImage('actual.png');
+    const expected = await loadImage('expected design.png');
 
-  await page.goto('http://localhost:8000');
+    if (actual.width !== expected.width || actual.height !== expected.height) {
+      console.error('❌ Image dimensions do not match!');
+      fs.writeFileSync('ssim-result.json', JSON.stringify({
+        status: 'fail',
+        reason: 'Dimension mismatch',
+        actual: { width: actual.width, height: actual.height },
+        expected: { width: expected.width, height: expected.height }
+      }, null, 2));
+      process.exit(1);
+    }
 
-  await page.screenshot({ path: 'actual.png' });
+    console.log('🧠 Comparing images using SSIM...');
+    const { ssim_map, mssim } = ssim(expected, actual, { ssim: 'fast' });
 
-  const actual = PNG.sync.read(fs.readFileSync('actual.png'));
-  const diff = new PNG({ width, height });
+    const score = mssim;
+    const status = score >= 0.95 ? 'pass' : 'fail';
 
-  const numDiffPixels = (pixelmatch.default || pixelmatch)(
-    expected.data,
-    actual.data,
-    diff.data,
-    width,
-    height,
-    { threshold: 0.1 }
-  );
+    console.log(`✅ SSIM score: ${score.toFixed(4)} (${status.toUpperCase()})`);
 
-  fs.writeFileSync('diff.png', PNG.sync.write(diff));
-  fs.writeFileSync('pixel-diff.txt', numDiffPixels.toString());
+    fs.writeFileSync('ssim-result.json', JSON.stringify({
+      status,
+      score: score.toFixed(4)
+    }, null, 2));
 
-  console.log(`🧪 Pixel difference: ${numDiffPixels}`);
-
-  await browser.close();
+    if (status === 'fail') {
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error('❌ Error in SSIM comparison:', err.message);
+    fs.writeFileSync('ssim-result.json', JSON.stringify({
+      status: 'fail',
+      error: err.message
+    }, null, 2));
+    process.exit(1);
+  }
 })();
